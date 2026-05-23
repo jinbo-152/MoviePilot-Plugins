@@ -1,12 +1,12 @@
 {
-  "id": "commands",
-  "name": "命令管理",
-  "description": "管理各消息服务注册的命令，支持自定义、过滤、权限控制",
-  "version": "2.0.0",
-  "author": "jinbo",
-  "category": "工具",
-  "requirements": [],
-  "config": {},
-  "documentation": "",
-  "scope": ["global"]
+  "MessageRouter": {
+    "name": "命令管理-自用",
+    "description": "管理各消息服务注册的命令，支持自定义、过滤、权限控制",
+    "labels": "系统",
+    "version": "1.0",
+    "icon": "https://github.com/shilinliu-jinbo/MoviePilot-Plugins/blob/main/icons/commands.png",
+    "author": "jinbo",
+    "level": 1,
+    "release": true,
+  }
 }
