@@ -1,5 +1,5 @@
 {
-  "commadns": {
+  "commands": {
     "name": "微信",
     "description": "微信命令",
     "labels": "通知",
