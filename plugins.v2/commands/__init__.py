@@ -1,10 +1,9 @@
 """
-命令管理插件 - 适配 MoviePilot V2 最新版
-功能：客户端命令过滤、自定义命令、权限拦截、菜单自定义
+命令管理插件 - 适配 MoviePilot 最新版
 """
 import json
 from typing import Dict, Any
-from app.plugins import PluginBase
+from app.plugins import Plugin
 from app.core.event import EventManager
 from app.utils import logger
 from app.schemas.types import EventType
@@ -15,7 +14,7 @@ __plugin_author__ = "jinbo"
 __plugin_desc__ = "管理各消息服务注册的命令，支持自定义、过滤、权限控制"
 
 
-class Plugin(PluginBase):
+class CommandsPlugin(Plugin):
     """
     命令管理插件
     """
@@ -32,7 +31,6 @@ class Plugin(PluginBase):
         if not config:
             config = {}
         
-        # 加载配置
         self.service_infos = config.get("service_infos", {})
         try:
             custom_conf = config.get("custom_commands", "{}")
@@ -41,7 +39,7 @@ class Plugin(PluginBase):
             logger.error(f"【命令管理】配置解析失败：{str(e)}")
             self.custom_commands = {}
 
-        # 注册新版命令钩子
+        # 注册命令处理钩子
         self.event_manager.register(
             event_type=EventType.CommandList,
             callback=self.process_commands
@@ -55,17 +53,14 @@ class Plugin(PluginBase):
         if not self.service_infos:
             return commands
 
-        # 1. 拦截未授权服务
-        if service not in self.service_infos.keys():
+        if service not in self.service_infos:
             logger.info(f"【命令管理】已拦截未授权服务：{service}")
             return {}
 
-        # 2. 获取自定义配置
         service_custom = self.custom_commands.get(service, {})
         if not service_custom:
             return commands
 
-        # 3. 过滤并修改命令
         processed = {}
         for cmd_key, cmd_info in commands.items():
             if cmd_key not in service_custom:
@@ -102,7 +97,7 @@ class Plugin(PluginBase):
                     "name": "service_infos",
                     "default": config.get("service_infos", {"WeChat": True, "Telegram": True}),
                     "rows": 5,
-                    "hint": "示例：{\"WeChat\": true, \"Telegram\": true}"
+                    "hint": '{"WeChat": true, "Telegram": true}'
                 },
                 {
                     "type": "title",
