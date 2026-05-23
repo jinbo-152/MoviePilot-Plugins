@@ -1,12 +1,16 @@
-"""
-命令管理插件 - 适配 MoviePilot 最新版
-"""
 import json
-from typing import Dict, Any
-from app.plugins.base import Plugin  # ✅ 这里修复了！
-from app.core.event import EventManager
-from app.utils import logger
-from app.schemas.types import EventType
+import threading
+from typing import Any, Dict, List, Optional, Tuple
+
+from app.core.event import Event, eventmanager
+from app.helper.notification import NotificationHelper
+from app.log import logger
+from app.plugins import _PluginBase
+from app.schemas import ServiceInfo
+from app.schemas.event import CommandRegisterEventData
+from app.schemas.types import ChainEventType
+
+lock = threading.Lock()
 
 __plugin_name__ = "命令管理"
 __plugin_version__ = "2.0.0"
