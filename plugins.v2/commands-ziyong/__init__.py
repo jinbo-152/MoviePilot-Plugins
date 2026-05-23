@@ -11,23 +11,23 @@ from app.schemas.types import ChainEventType
 
 lock = threading.Lock()
 
-class Commands(_PluginBase):
-    # 插件名称
-    plugin_name = "命令管理"
+class CommandsZiyong(_PluginBase):  # 类名修改为 CommandsZiyong
+    # 插件名称 (界面显示名称)
+    plugin_name = "命令管理(自用版)"
     # 插件描述
-    plugin_desc = "实现微信、Telegram等客户端的命令管理。"
+    plugin_desc = "实现微信、Telegram等客户端的命令管理 (自用独立版)。"
     # 插件图标
     plugin_icon = "https://raw.githubusercontent.com/InfinityPacer/MoviePilot-Plugins/main/icons/commands.png"
     # 插件版本
-    plugin_version = "2.0"  # 升级版本号
+    plugin_version = "2.0.1"  
     # 插件作者
-    plugin_author = "InfinityPacer"
+    plugin_author = "InfinityPacer & You"
     # 作者主页
     author_url = "https://github.com/InfinityPacer"
-    # 插件配置项ID前缀
-    plugin_config_prefix = "commands_"
+    # 插件配置项ID前缀 (必须修改，防止与原版配置冲突！)
+    plugin_config_prefix = "commands_ziyong_"
     # 加载顺序
-    plugin_order = 42
+    plugin_order = 43
     # 可使用的用户级别
     auth_level = 1
 
@@ -49,7 +49,7 @@ class Commands(_PluginBase):
         try:
             self._custom_commands = json.loads(config.get("custom_commands")) or {}
         except Exception as e:
-            logger.error(f"自定义命令格式错误，请检查，{e}")
+            logger.error(f"[{self.plugin_name}] 自定义命令格式错误，请检查，{e}")
             self._custom_commands = {}
 
     @property
@@ -58,13 +58,13 @@ class Commands(_PluginBase):
         获取通知服务信息 (V2 标准方式)
         """
         if not self._notify_clients:
-            logger.warning("尚未配置通知客户端，请检查配置")
+            logger.warning(f"[{self.plugin_name}] 尚未配置通知客户端，请检查配置")
             return None
 
         # V2 中通过基类方法获取指定类型的服务实例
         services = self.get_services(type="notification", name_filters=self._notify_clients)
         if not services:
-            logger.warning("获取通知客户端实例失败，请检查配置")
+            logger.warning(f"[{self.plugin_name}] 获取通知客户端实例失败，请检查配置")
             return None
 
         return services
@@ -83,10 +83,9 @@ class Commands(_PluginBase):
         """
         拼装插件配置页面
         """
-        # V2 中获取通知渠道列表的兼容方案：使用固定常用渠道 + 动态获取已启用渠道
+        # V2 中获取通知渠道列表的兼容方案
         notify_channels = ["WeChat", "Telegram", "SynologyChat", "Slack", "VoceChat", "WebPush"]
         
-        # 尝试补充当前已启用的通知服务名称
         try:
             active_services = self.get_services(type="notification")
             if active_services:
@@ -263,10 +262,10 @@ class Commands(_PluginBase):
             return
 
         event_data: CommandRegisterEventData = event.event_data
-        logger.debug(f"处理命令注册事件 - source: {event_data.source}, service: {event_data.service}")
+        logger.debug(f"[{self.plugin_name}] 处理命令注册事件 - source: {event_data.source}, service: {event_data.service}")
 
         if event_data.cancel:
-            logger.debug(f"该事件已被其他事件处理器处理，跳过后续操作")
+            logger.debug(f"[{self.plugin_name}] 该事件已被其他事件处理器处理，跳过后续操作")
             return
 
         # V2 中，系统预置命令收集阶段 source 通常为 CommandChain
@@ -276,22 +275,22 @@ class Commands(_PluginBase):
             self.update_config(config=config)
             return
 
-        # V2 中，具体通知渠道触发时，service 字段包含渠道名称（如 WeChat, Telegram）
+        # V2 中，具体通知渠道触发时，service 字段包含渠道名称
         if event_data.service not in ["WeChat", "Telegram", "SynologyChat", "Slack"]:
-            logger.debug(f"尚未支持的事件服务: {event_data.service}，跳过拦截")
+            logger.debug(f"[{self.plugin_name}] 尚未支持的事件服务: {event_data.service}，跳过拦截")
             return
 
         # 如果不在选择的服务实例中，则直接拦截
-        event_data.source = self.plugin_name
+        event_data.source = self.plugin_name  # 标记来源为自用版
         if not self.service_infos or event_data.service not in self.service_infos.keys():
             event_data.cancel = True
-            logger.warning(f"命令注册被拦截，service: {event_data.service}")
+            logger.warning(f"[{self.plugin_name}] 命令注册被拦截，service: {event_data.service}")
             return
         else:
             event_data.cancel = False
             custom_commands = self._custom_commands.get(event_data.service) or {}
             if not custom_commands:
-                logger.info(f"未能获取到 {event_data.service} 相关的自定义命令，跳过处理")
+                logger.info(f"[{self.plugin_name}] 未能获取到 {event_data.service} 相关的自定义命令，跳过处理")
                 return
             else:
                 # 遍历并更新 event_data.commands
@@ -305,7 +304,7 @@ class Commands(_PluginBase):
                     else:
                         # 如果命令不在自定义命令中，则从 event_data.commands 中移除
                         del event_data.commands[cmd_key]
-                logger.debug(f"Final commands after processing for {event_data.service}: {event_data.commands}")
+                logger.debug(f"[{self.plugin_name}] Final commands after processing for {event_data.service}: {event_data.commands}")
 
     @staticmethod
     def __get_default_commands():

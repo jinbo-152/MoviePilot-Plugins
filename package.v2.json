@@ -1,5 +1,5 @@
 {
-  "commands": {
+  "commands-ziyong": {
     "name": "微信命令",
     "description": "通过微信发送命令控制 MoviePilot，支持自定义命令和响应。",
     "labels": "微信,命令,通知",
