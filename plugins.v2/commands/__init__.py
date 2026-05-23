@@ -3,12 +3,18 @@
 功能：客户端命令过滤、自定义命令、权限拦截、菜单自定义
 """
 import json
-from typing import Dict, Any
-from app.plugins import PluginBase
-from app.core.event import EventManager
-from app.utils import logger
-from app.schemas.types import EventType
+import threading
+from typing import Any, Dict, List, Optional, Tuple
 
+from app.core.event import Event, eventmanager
+from app.helper.notification import NotificationHelper
+from app.log import logger
+from app.plugins import _PluginBase
+from app.schemas import ServiceInfo
+from app.schemas.event import CommandRegisterEventData
+from app.schemas.types import ChainEventType
+
+lock = threading.Lock()
 class Plugin(PluginBase):
       # 插件名称
     plugin_name = "自用"
