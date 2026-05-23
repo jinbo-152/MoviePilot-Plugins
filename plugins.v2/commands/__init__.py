@@ -11,33 +11,7 @@ from app.utils import logger
 
 
 class CommandsPlugin(PluginBase):
-    # 插件名称
-    plugin_name = "命令管理"
-    # 插件描述
-    plugin_desc = "实现微信、Telegram等客户端的命令管理。"
-    # 插件图标
-    plugin_icon = "https://raw.githubusercontent.com/shilinliu-jinbo/MoviePilot-Plugins/main/icons/commands.png"
-    # 插件版本
-    plugin_version = "1.0"
-    # 插件作者
-    plugin_author = "InfinityPacer"
-    # 作者主页
-    author_url = "https://github.com/shilinliu-jinbo"
-    # 插件配置项ID前缀
-    plugin_config_prefix = "commands_"
-    # 加载顺序
-    plugin_order = 42
-    # 可使用的用户级别
-    auth_level = 1
-
-    # region 私有属性
-    notify_helper = None
-    # 是否开启
-    _enabled = False
-    # 通知客户端
-    _notify_clients = None
-    # 自定义指令
-    _custom_commands = None
+    
     # 配置项
     _config: dict = {
         "enable": True,
