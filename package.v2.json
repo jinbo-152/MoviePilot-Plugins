@@ -1,5 +1,6 @@
 {
   "MyPlugin": {
+    "id": "commands",
     "name": "微信命令",
     "description": "用于自定义微信命令",
     "labels": "通知",
