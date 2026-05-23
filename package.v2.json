@@ -3,7 +3,7 @@
     "name": "微信命令",
     "description": "通过微信发送命令控制 MoviePilot，支持自定义命令和响应。",
     "labels": "微信,命令,通知",
-    "version": "1.1",
+    "version": "1.2",
     "icon": "https://github.com/shilinliu-jinbo/MoviePilot-Plugins/blob/main/icons/commands.png",
     "author": "jinbo",
     "level": 1
