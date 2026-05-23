@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 [
   {
     "id": "commands",
@@ -12,3 +13,20 @@
     "scope": ["global"]
   }
 ]
+=======
+{
+    "Commands": {
+        "name": "命令管理-自用",
+        "description": "实现微信、Telegram等客户端的命令管理。",
+        "labels": "工具",
+        "version": "1.0",
+        "icon": "https://raw.githubusercontent.com/shilinliu-jinbo/MoviePilot-Plugins/main/icons/commands.png",
+        "author": "shilinliu-jinbo",
+        "level": 1,
+        "history": {
+            "v1.0": "增加命令管理插件，实现微信、Telegram等客户端的命令管理"
+        }
+    }
+    
+}
+>>>>>>> 3508bcf4cbbd1864b81e67ad832da36a45c34fd5
