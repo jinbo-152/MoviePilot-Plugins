@@ -1,99 +1,340 @@
-"""
-命令管理插件 - 适配 MoviePilot V2 官方标准
-"""
 import json
-from typing import Dict, Any
-from app.plugins import PluginBase
-from app.core import settings
-from app.utils import logger
-from app.schemas.types import EventType
-from app.core.event import EventManager
+import threading
+from typing import Any, Dict, List, Optional, Tuple
 
-__plugin_name__ = "命令管理"
-__plugin_version__ = "2.0.0"
-__plugin_author__ = "jinbo"
-__plugin_desc__ = "管理各消息服务注册的命令，支持自定义、过滤、权限控制"
+from app.core.event import Event, eventmanager
+from app.log import logger
+from app.plugins import _PluginBase
+from app.schemas import ServiceInfo
+from app.schemas.event import CommandRegisterEventData
+from app.schemas.types import ChainEventType
 
+lock = threading.Lock()
 
-class Plugin(PluginBase):
-    """
-    命令管理插件
-    """
-    def init(self):
-        """
-        插件初始化
-        """
-        self.service_infos = self.config.get("service_infos", {})
+class Commands(_PluginBase):
+    # 插件名称
+    plugin_name = "命令管理"
+    # 插件描述
+    plugin_desc = "实现微信、Telegram等客户端的命令管理。"
+    # 插件图标
+    plugin_icon = "https://raw.githubusercontent.com/InfinityPacer/MoviePilot-Plugins/main/icons/commands.png"
+    # 插件版本
+    plugin_version = "2.0"  # 升级版本号
+    # 插件作者
+    plugin_author = "InfinityPacer"
+    # 作者主页
+    author_url = "https://github.com/InfinityPacer"
+    # 插件配置项ID前缀
+    plugin_config_prefix = "commands_"
+    # 加载顺序
+    plugin_order = 42
+    # 可使用的用户级别
+    auth_level = 1
+
+    # region 私有属性
+    # 是否开启
+    _enabled = False
+    # 通知客户端
+    _notify_clients = None
+    # 自定义指令
+    _custom_commands = None
+    # endregion
+
+    def init_plugin(self, config: dict = None):
+        if not config:
+            return
+
+        self._enabled = config.get("enabled") or False
+        self._notify_clients = config.get("notify_clients") or []
         try:
-            custom_conf = self.config.get("custom_commands", "{}")
-            self.custom_commands = json.loads(custom_conf) if isinstance(custom_conf, str) else custom_conf
+            self._custom_commands = json.loads(config.get("custom_commands")) or {}
         except Exception as e:
-            logger.error(f"【命令管理】配置解析失败：{str(e)}")
-            self.custom_commands = {}
+            logger.error(f"自定义命令格式错误，请检查，{e}")
+            self._custom_commands = {}
 
-        # 注册事件
-        self.register_event(EventType.CommandList, self.process_commands)
-        logger.info(f"【命令管理】插件加载完成 v{__plugin_version__}")
-
-    def process_commands(self, service: str, commands: Dict[str, Dict], **kwargs):
+    @property
+    def service_infos(self) -> Optional[Dict[str, ServiceInfo]]:
         """
-        处理命令
+        获取通知服务信息 (V2 标准方式)
         """
-        if not self.service_infos:
-            return commands
+        if not self._notify_clients:
+            logger.warning("尚未配置通知客户端，请检查配置")
+            return None
 
-        if service not in self.service_infos:
-            return {}
+        # V2 中通过基类方法获取指定类型的服务实例
+        services = self.get_services(type="notification", name_filters=self._notify_clients)
+        if not services:
+            logger.warning("获取通知客户端实例失败，请检查配置")
+            return None
 
-        service_custom = self.custom_commands.get(service, {})
-        if not service_custom:
-            return commands
+        return services
 
-        processed = {}
-        for cmd_key, cmd_info in commands.items():
-            if cmd_key not in service_custom:
-                continue
-            new_cmd = cmd_info.copy()
-            custom = service_custom[cmd_key]
-            if custom.get("description"):
-                new_cmd["name"] = custom["description"]
-            if custom.get("category"):
-                new_cmd["category"] = custom["category"]
-            processed[cmd_key] = new_cmd
+    def get_state(self) -> bool:
+        return self._enabled
 
-        return processed
+    @staticmethod
+    def get_command() -> List[Dict[str, Any]]:
+        return []
 
-    def get_page(self):
+    def get_api(self) -> List[Dict[str, Any]]:
+        return []
+
+    def get_form(self) -> Tuple[List[dict], Dict[str, Any]]:
         """
-        配置页面
+        拼装插件配置页面
         """
-        return {
-            "title": "命令管理",
-            "config": [
-                {
-                    "type": "title",
-                    "text": "启用服务配置"
-                },
-                {
-                    "type": "input",
-                    "label": "启用服务（JSON）",
-                    "name": "service_infos",
-                    "default": self.config.get("service_infos", {"WeChat": True, "Telegram": True}),
-                    "rows": 5
-                },
-                {
-                    "type": "title",
-                    "text": "自定义命令"
-                },
-                {
-                    "type": "input",
-                    "label": "自定义命令（JSON）",
-                    "name": "custom_commands",
-                    "default": self.config.get("custom_commands", "{}"),
-                    "rows": 15
-                }
-            ]
+        # V2 中获取通知渠道列表的兼容方案：使用固定常用渠道 + 动态获取已启用渠道
+        notify_channels = ["WeChat", "Telegram", "SynologyChat", "Slack", "VoceChat", "WebPush"]
+        
+        # 尝试补充当前已启用的通知服务名称
+        try:
+            active_services = self.get_services(type="notification")
+            if active_services:
+                for name in active_services.keys():
+                    if name not in notify_channels:
+                        notify_channels.append(name)
+        except Exception:
+            pass
+
+        notify_items = [{"title": name, "value": name} for name in notify_channels]
+
+        return [
+            {
+                'component': 'VForm',
+                'content': [
+                    {
+                        'component': 'VRow',
+                        'content': [
+                            {
+                                'component': 'VCol',
+                                'props': {'cols': 12, 'md': 6},
+                                'content': [
+                                    {
+                                        'component': 'VSwitch',
+                                        'props': {
+                                            'model': 'enabled',
+                                            'label': '启用插件',
+                                            'hint': '开启后插件将处于激活状态',
+                                            'persistent-hint': True
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        'component': 'VRow',
+                        'content': [
+                            {
+                                'component': 'VCol',
+                                'props': {'cols': 12},
+                                'content': [
+                                    {
+                                        'component': 'VSelect',
+                                        'props': {
+                                            'multiple': True,
+                                            'chips': True,
+                                            'clearable': True,
+                                            'model': 'notify_clients',
+                                            'label': '启用命令菜单的通知客户端',
+                                            'hint': '选择启用命令菜单的通知客户端 (V2中通常为 WeChat, Telegram 等)',
+                                            'persistent-hint': True,
+                                            'items': notify_items
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        'component': 'VTabs',
+                        'props': {
+                            'model': '_tabs',
+                            'style': {'margin-top': '8px', 'margin-bottom': '16px'},
+                            'stacked': False,
+                            'fixed-tabs': False
+                        },
+                        'content': [
+                            {'component': 'VTab', 'props': {'value': 'preset_tab'}, 'text': '系统预置'},
+                            {'component': 'VTab', 'props': {'value': 'custom_tab'}, 'text': '自定义'}
+                        ]
+                    },
+                    {
+                        'component': 'VWindow',
+                        'props': {'model': '_tabs'},
+                        'content': [
+                            {
+                                'component': 'VWindowItem',
+                                'props': {'value': 'preset_tab'},
+                                'content': [
+                                    {
+                                        'component': 'VRow',
+                                        'content': [
+                                            {
+                                                'component': 'VCol',
+                                                'props': {"cols": 12},
+                                                'content': [
+                                                    {
+                                                        'component': 'VAceEditor',
+                                                        'props': {
+                                                            'modelvalue': 'preset_commands',
+                                                            'lang': 'json',
+                                                            'theme': 'monokai',
+                                                            'style': 'height: 35rem; font-size: 14px',
+                                                            'readonly': True
+                                                        }
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                'component': 'VWindowItem',
+                                'props': {'value': 'custom_tab'},
+                                'content': [
+                                    {
+                                        'component': 'VRow',
+                                        'content': [
+                                            {
+                                                'component': 'VCol',
+                                                'props': {"cols": 12},
+                                                'content': [
+                                                    {
+                                                        'component': 'VAceEditor',
+                                                        'props': {
+                                                            'modelvalue': 'custom_commands',
+                                                            'lang': 'json',
+                                                            'theme': 'monokai',
+                                                            'style': 'height: 35rem; font-size: 14px'
+                                                        }
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        'component': 'VRow',
+                        'props': {'style': {'margin-top': '12px'}},
+                        'content': [
+                            {
+                                'component': 'VCol',
+                                'props': {'cols': 12},
+                                'content': [
+                                    {
+                                        'component': 'VAlert',
+                                        'props': {
+                                            'type': 'info',
+                                            'variant': 'tonal',
+                                            'text': '注意：企业微信目前仅支持3个一级菜单和5个二级菜单。V2版本中，请确保通知客户端名称与系统服务名称一致（如 WeChat, Telegram）。'
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ], {
+            "enabled": False,
+            "custom_commands": self.__get_default_commands()
         }
 
-    def stop(self):
-        logger.info("【命令管理】插件已停止")
+    def get_page(self) -> List[dict]:
+        return []
+
+    def get_service(self) -> List[Dict[str, Any]]:
+        return []
+
+    def stop_service(self):
+        pass
+
+    @eventmanager.register(ChainEventType.CommandRegister)
+    def handle_command_register(self, event: Event):
+        """
+        处理 CommandRegister 事件 (V2 适配版)
+        """
+        if not event or not event.event_data:
+            return
+
+        event_data: CommandRegisterEventData = event.event_data
+        logger.debug(f"处理命令注册事件 - source: {event_data.source}, service: {event_data.service}")
+
+        if event_data.cancel:
+            logger.debug(f"该事件已被其他事件处理器处理，跳过后续操作")
+            return
+
+        # V2 中，系统预置命令收集阶段 source 通常为 CommandChain
+        if event_data.source == "CommandChain":
+            config = self.get_config()
+            config["preset_commands"] = json.dumps(event_data.commands, indent=4, ensure_ascii=False)
+            self.update_config(config=config)
+            return
+
+        # V2 中，具体通知渠道触发时，service 字段包含渠道名称（如 WeChat, Telegram）
+        if event_data.service not in ["WeChat", "Telegram", "SynologyChat", "Slack"]:
+            logger.debug(f"尚未支持的事件服务: {event_data.service}，跳过拦截")
+            return
+
+        # 如果不在选择的服务实例中，则直接拦截
+        event_data.source = self.plugin_name
+        if not self.service_infos or event_data.service not in self.service_infos.keys():
+            event_data.cancel = True
+            logger.warning(f"命令注册被拦截，service: {event_data.service}")
+            return
+        else:
+            event_data.cancel = False
+            custom_commands = self._custom_commands.get(event_data.service) or {}
+            if not custom_commands:
+                logger.info(f"未能获取到 {event_data.service} 相关的自定义命令，跳过处理")
+                return
+            else:
+                # 遍历并更新 event_data.commands
+                commands = event_data.commands
+                for cmd_key in list(commands.keys()):
+                    if cmd_key in custom_commands:
+                        category = commands[cmd_key].get("category", "")
+                        description = commands[cmd_key].get("description", "")
+                        commands[cmd_key]["category"] = custom_commands[cmd_key].get("category", category)
+                        commands[cmd_key]["description"] = custom_commands[cmd_key].get("description", description)
+                    else:
+                        # 如果命令不在自定义命令中，则从 event_data.commands 中移除
+                        del event_data.commands[cmd_key]
+                logger.debug(f"Final commands after processing for {event_data.service}: {event_data.commands}")
+
+    @staticmethod
+    def __get_default_commands():
+        """
+        获取自定义默认值指令
+        """
+        return """{
+    "WeChat": {
+        "/cookiecloud": {
+            "type": "preset",
+            "description": "同步站点",
+            "category": "站点"
+        },
+        "/sites": {
+            "type": "preset",
+            "description": "查询站点",
+            "category": "站点"
+        }
+    },
+    "Telegram": {
+        "/restart": {
+            "type": "preset",
+            "description": "重启系统",
+            "category": "管理"
+        },
+        "/version": {
+            "type": "preset",
+            "description": "当前版本",
+            "category": "管理"
+        }
+    }
+}"""
