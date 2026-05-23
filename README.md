@@ -1,6 +1,6 @@
 # MoviePilot-Plugins
 
-MoviePilot三方插件：https://github.com/InfinityPacer/MoviePilot-Plugins
+MoviePilot三方插件：https://github.com/shilinliu-jinbo/MoviePilot-Plugins
 
 ## 安装说明
 
