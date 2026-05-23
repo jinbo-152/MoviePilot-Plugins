@@ -1,11 +1,12 @@
 {
-  "commands": {
-    "name": "微信",
-    "description": "微信命令",
-    "labels": "通知",
-    "version": "1.4",
-    "icon": "https://github.com/shilinliu-jinbo/MoviePilot-Plugins/blob/main/icons/commands.png",
-    "author": "jinbo",
-    "level": 1
-  }
+  "id": "commands",
+  "name": "命令管理",
+  "description": "管理各消息服务注册的命令，支持自定义、过滤、权限控制",
+  "version": "2.0.0",
+  "author": "jinbo",
+  "category": "工具",
+  "requirements": [],
+  "config": {},
+  "documentation": "",
+  "scope": ["global"]
 }
