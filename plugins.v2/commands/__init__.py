@@ -9,16 +9,34 @@ from app.core.event import EventManager
 from app.utils import logger
 from app.schemas.types import EventType
 
-__plugin_name__ = "命令管理"
-__plugin_version__ = "2.0.0"
-__plugin_author__ = "jinbo"
-__plugin_desc__ = "管理各消息服务注册的命令，支持自定义、过滤、权限控制"
-
-
 class Plugin(PluginBase):
-    """
-    命令管理插件
-    """
+      # 插件名称
+    plugin_name = "自用"
+    # 插件描述
+    plugin_desc = "实现微信、Telegram等客户端的命令管理。"
+    # 插件图标
+    plugin_icon = "https://raw.githubusercontent.com/shilinliu-jinbo/MoviePilot-Plugins/main/icons/commands.png"
+    # 插件版本
+    plugin_version = "1.0"
+    # 插件作者
+    plugin_author = "shilinliu-jinbo"
+    # 作者主页
+    author_url = "https://github.com/shilinliu-jinbo"
+    # 插件配置项ID前缀
+    plugin_config_prefix = "commands"
+    # 加载顺序
+    plugin_order = 42
+    # 可使用的用户级别
+    auth_level = 1
+
+    # region 私有属性
+    notify_helper = None
+    # 是否开启
+    _enabled = False
+    # 通知客户端
+    _notify_clients = None
+    # 自定义指令
+    _custom_commands = None
     def __init__(self, plugin_id: str):
         super().__init__(plugin_id)
         self.event_manager = EventManager()
