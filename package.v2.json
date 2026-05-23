@@ -1,10 +1,10 @@
 {
-  "MyPlugin": {
-    "name": "命令",
-    "description": "一个最小可运行的 V2 插件示例。",
-    "labels": "示例",
-    "version": "1.0.0",
-    "icon": "Moviepilot_A.png",
+  "commands": {
+    "name": "微信",
+    "description": "微信命令",
+    "labels": "通知",
+    "version": "1.1",
+    "icon": "https://github.com/shilinliu-jinbo/MoviePilot-Plugins/blob/main/icons/commands.png",
     "author": "jinbo",
     "level": 1
   }
