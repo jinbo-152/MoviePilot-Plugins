@@ -3,7 +3,7 @@
 """
 import json
 from typing import Dict, Any
-from app.plugins import Plugin
+from app.plugins.base import Plugin  # ✅ 这里修复了！
 from app.core.event import EventManager
 from app.utils import logger
 from app.schemas.types import EventType
@@ -15,9 +15,6 @@ __plugin_desc__ = "管理各消息服务注册的命令，支持自定义、过�
 
 
 class CommandsPlugin(Plugin):
-    """
-    命令管理插件
-    """
     def __init__(self, plugin_id: str):
         super().__init__(plugin_id)
         self.event_manager = EventManager()
@@ -25,9 +22,6 @@ class CommandsPlugin(Plugin):
         self.custom_commands: Dict[str, Any] = {}
 
     def init(self, config: dict = None):
-        """
-        插件初始化
-        """
         if not config:
             config = {}
         
@@ -39,7 +33,6 @@ class CommandsPlugin(Plugin):
             logger.error(f"【命令管理】配置解析失败：{str(e)}")
             self.custom_commands = {}
 
-        # 注册命令处理钩子
         self.event_manager.register(
             event_type=EventType.CommandList,
             callback=self.process_commands
@@ -47,9 +40,6 @@ class CommandsPlugin(Plugin):
         logger.info("【命令管理】插件初始化完成")
 
     def process_commands(self, service: str, commands: Dict[str, Dict], **kwargs):
-        """
-        处理命令列表：过滤 + 自定义
-        """
         if not self.service_infos:
             return commands
 
@@ -79,9 +69,6 @@ class CommandsPlugin(Plugin):
         return processed
 
     def get_page(self, config: dict = None):
-        """
-        插件配置页面
-        """
         if not config:
             config = {}
         return {
