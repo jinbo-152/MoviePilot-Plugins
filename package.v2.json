@@ -1,12 +1,12 @@
 {
-  "MessageRouter": {
-    "name": "命令管理-自用",
-    "description": "管理各消息服务注册的命令，支持自定义、过滤、权限控制",
-    "labels": "系统",
-    "version": "1.0",
-    "icon": "https://github.com/shilinliu-jinbo/MoviePilot-Plugins/blob/main/icons/commands.png",
-    "author": "jinbo",
-    "level": 1,
-    "release": true,
+  "MyPlugin": {
+    "name": "命令",
+    "description": "一个最小可运行的 V2 插件示例。",
+    "labels": "示例",
+    "version": "1.0.0",
+    "icon": "Moviepilot_A.png",
+    "author": "your-name",
+    "system_version": ">=2.12.0",
+    "level": 1
   }
 }
