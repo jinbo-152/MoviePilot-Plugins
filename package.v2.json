@@ -1,12 +1,11 @@
 {
   "MyPlugin": {
-    "name": "微信命令",
-    "description": "用户微信命令",
-    "labels": "通知",
-    "version": "1.0",
-    "icon": "https://github.com/shilinliu-jinbo/MoviePilot-Plugins/blob/main/icons/commands.png",
+    "name": "命令",
+    "description": "一个最小可运行的 V2 插件示例。",
+    "labels": "示例",
+    "version": "1.0.0",
+    "icon": "Moviepilot_A.png",
     "author": "jinbo",
-    "system_version": "1",
     "level": 1
   }
 }
