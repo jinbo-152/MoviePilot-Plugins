@@ -8,4 +8,13 @@
     "author": "jinbo",
     "level": 1
   }
+  "weixinip": {
+    "name": "weixin",
+    "description": "添加微信ip",
+    "labels": "微信,ip",
+    "version": "0.1",
+    "icon": "https://github.com/jinbo-152/MoviePilot-Plugins/blob/main/icons/commands.png",
+    "author": "jinbo",
+    "level": 1
+  }
 }
