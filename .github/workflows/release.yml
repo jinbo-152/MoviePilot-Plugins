@@ -71,14 +71,17 @@ jobs:
                 continue
               fi
 
-              notes="$(jq -r --arg p "$plugin_id" --arg v "v$plugin_version" '.[$p].history[$v] // empty' "$pkg")"
+              notes="$(jq -r --arg p "$plugin_id" --arg v "$plugin_version" '((.[$p].history["v" + $v]) // (.[$p].history[$v]) // empty)' "$pkg")"
               if [ -z "$notes" ]; then
                 notes="Automated release of $plugin_id $plugin_version"
               fi
 
               if git rev-parse -q --verify "refs/tags/$tag" >/dev/null 2>&1; then
                 if git diff --quiet "$tag" -- "$plugin_dir"; then
-                  echo "no changes in $plugin_dir since $tag, skip packaging"
+                  echo "no changes in $plugin_dir since $tag, refresh release notes only"
+                  if gh release view "$tag" >/dev/null 2>&1; then
+                    gh release edit "$tag" --title "$tag" --notes "$notes"
+                  fi
                   echo "$tag" >> processed_tags.txt
                   continue
                 fi
